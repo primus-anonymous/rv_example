@@ -1,18 +1,27 @@
 package com.example.notes.ui.notes;
 
+import android.os.Build;
 import android.os.Bundle;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.example.notes.R;
 import com.example.notes.domain.domain.Note;
+import com.google.android.material.datepicker.MaterialDatePicker;
+import com.google.android.material.datepicker.MaterialPickerOnPositiveButtonClickListener;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
@@ -22,25 +31,41 @@ import androidx.recyclerview.widget.RecyclerView;
 public class NotesFragment extends Fragment {
 
     public static final String TAG = "NotesFragment";
+    private static final int MY_DEFAULT_DURATION = 10000;
 
     private NotesViewModel notesViewModel;
 
     private NotesAdapter adapter;
+    private int contextMenuItemPosition;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         notesViewModel =
-                new ViewModelProvider(this).get(NotesViewModel.class);
+                new ViewModelProvider(this, new NotesViewModelFactory()).get(NotesViewModel.class);
 
         notesViewModel.fetchNotes();
 
-        adapter = new NotesAdapter();
+        adapter = new NotesAdapter(this);
         adapter.setNoteClicked(new NotesAdapter.OnNoteClicked() {
             @Override
             public void onNoteClicked(Note note) {
                 Toast.makeText(requireContext(), note.getName(), Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        adapter.setNoteLongClicked(new NotesAdapter.OnNoteLongClicked() {
+            @Override
+            public void onNoteLongClicked(View itemView, int position, Note note) {
+
+                contextMenuItemPosition = position;
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    itemView.showContextMenu(10, 10);
+                } else {
+                    itemView.showContextMenu();
+                }
             }
         });
     }
@@ -58,7 +83,42 @@ public class NotesFragment extends Fragment {
         RecyclerView notesList = view.findViewById(R.id.notes_list);
         notesList.setAdapter(adapter);
 
-        notesList.setLayoutManager(new GridLayoutManager(requireContext(), 2));
+//        DefaultItemAnimator animator = new DefaultItemAnimator();
+//        animator.setAddDuration(MY_DEFAULT_DURATION);
+//        animator.setRemoveDuration(MY_DEFAULT_DURATION);
+//        notesList.setItemAnimator(animator);
+
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(requireContext(), 2);
+
+        gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+            @Override
+            public int getSpanSize(int position) {
+                if (adapter.getItemViewType(position) == NotesAdapter.ITEM_HEADER) {
+                    return 2;
+                }
+                return 1;
+            }
+        });
+
+        notesList.setLayoutManager(gridLayoutManager);
+
+        ProgressBar progressBar = view.findViewById(R.id.progress);
+
+        Toolbar toolbar = view.findViewById(R.id.toolbar);
+
+        toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+
+                if (item.getItemId() == R.id.action_add_new) {
+                    notesViewModel.addNewNote();
+                } else if (item.getItemId() == R.id.action_clear) {
+                    notesViewModel.clearNotes();
+                }
+
+                return true;
+            }
+        });
 
         //notesList.setLayoutManager(new LinearLayoutManager(requireContext()));
 
@@ -71,10 +131,82 @@ public class NotesFragment extends Fragment {
                 .observe(getViewLifecycleOwner(), new Observer<List<Note>>() {
                     @Override
                     public void onChanged(List<Note> notes) {
-                        adapter.clear();
-                        adapter.addItems(notes);
+                        adapter.setItems(notes);
                         adapter.notifyDataSetChanged();
                     }
                 });
+
+        notesViewModel.getProgressLiveData()
+                .observe(getViewLifecycleOwner(), new Observer<Boolean>() {
+                    @Override
+                    public void onChanged(Boolean isVisible) {
+                        if (isVisible) {
+                            progressBar.setVisibility(View.VISIBLE);
+                        } else {
+                            progressBar.setVisibility(View.GONE);
+                        }
+                    }
+                });
+
+        notesViewModel.getNewNoteAddedLiveData()
+                .observe(getViewLifecycleOwner(), new Observer<Note>() {
+                    @Override
+                    public void onChanged(Note note) {
+//                        adapter.addItem(note);
+//                        adapter.notifyItemInserted(adapter.getItemCount() - 1);
+//
+//                        notesList.smoothScrollToPosition(adapter.getItemCount() - 1);
+                    }
+                });
+
+        notesViewModel.getRemovedItemPositionLiveData()
+                .observe(getViewLifecycleOwner(), new Observer<Integer>() {
+                    @Override
+                    public void onChanged(Integer position) {
+//                        adapter.removeAtPosition(position);
+//                        adapter.notifyItemRemoved(position);
+                    }
+                });
+
+        notesViewModel.getSelectedDateLiveData()
+                .observe(getViewLifecycleOwner(), new Observer<String>() {
+                    @Override
+                    public void onChanged(String message) {
+                        Snackbar.make(view, message, Snackbar.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    @Override
+    public void onCreateContextMenu(@NonNull ContextMenu menu, @NonNull View v, @Nullable ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+
+        MenuInflater menuInflater = requireActivity().getMenuInflater();
+        menuInflater.inflate(R.menu.context_menu, menu);
+    }
+
+    @Override
+    public boolean onContextItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.action_delete) {
+            notesViewModel.deleteAtPosition(contextMenuItemPosition);
+            return true;
+        }
+        if (item.getItemId() == R.id.action_show_picker) {
+
+            MaterialDatePicker picker = MaterialDatePicker.Builder.datePicker().build();
+
+            picker.addOnPositiveButtonClickListener(new MaterialPickerOnPositiveButtonClickListener<Long>() {
+                        @Override
+                        public void onPositiveButtonClick(Long selection) {
+                            notesViewModel.dateSelected(selection);
+                        }
+                    });
+
+            picker.show(getChildFragmentManager(), "MaterialDatePicker");
+
+            return true;
+        }
+
+        return super.onContextItemSelected(item);
     }
 }

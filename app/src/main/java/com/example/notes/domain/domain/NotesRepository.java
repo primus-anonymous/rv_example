@@ -4,6 +4,9 @@ import java.util.List;
 
 public interface NotesRepository {
 
-    List<Note> getNotes();
+    void getNotes(Callback<List<Note>> callback);
 
+    void clearNotes(Callback<Object> voidCallback);
+
+    void addNewNote(Callback<Note> noteCallback);
 }
