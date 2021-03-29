@@ -6,11 +6,11 @@ public class Note {
 
     private String id;
 
-    private String name;
+    private final String name;
 
-    private String imageUrl;
+    private final String imageUrl;
 
-    private Date date;
+    private final Date date;
 
     public Note(String id, String name, String imageUrl, Date date) {
         this.id = id;
@@ -33,5 +33,9 @@ public class Note {
 
     public Date getDate() {
         return date;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 }

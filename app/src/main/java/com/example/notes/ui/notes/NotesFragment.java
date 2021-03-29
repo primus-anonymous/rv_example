@@ -13,6 +13,8 @@ import android.widget.Toast;
 
 import com.example.notes.R;
 import com.example.notes.domain.domain.Note;
+import com.example.notes.ui.notes.adapter.AdapterItem;
+import com.example.notes.ui.notes.adapter.NotesAdapter;
 import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.android.material.datepicker.MaterialPickerOnPositiveButtonClickListener;
 import com.google.android.material.snackbar.Snackbar;
@@ -31,8 +33,8 @@ import androidx.recyclerview.widget.RecyclerView;
 public class NotesFragment extends Fragment {
 
     public static final String TAG = "NotesFragment";
+    public static final int SPAN_COUNT = 2;
     private static final int MY_DEFAULT_DURATION = 10000;
-
     private NotesViewModel notesViewModel;
 
     private NotesAdapter adapter;
@@ -88,13 +90,13 @@ public class NotesFragment extends Fragment {
 //        animator.setRemoveDuration(MY_DEFAULT_DURATION);
 //        notesList.setItemAnimator(animator);
 
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(requireContext(), 2);
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(requireContext(), SPAN_COUNT);
 
         gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
             @Override
             public int getSpanSize(int position) {
                 if (adapter.getItemViewType(position) == NotesAdapter.ITEM_HEADER) {
-                    return 2;
+                    return SPAN_COUNT;
                 }
                 return 1;
             }
@@ -128,11 +130,10 @@ public class NotesFragment extends Fragment {
 //        notesList.addItemDecoration(itemDecoration);
 
         notesViewModel.getNotesLiveData()
-                .observe(getViewLifecycleOwner(), new Observer<List<Note>>() {
+                .observe(getViewLifecycleOwner(), new Observer<List<AdapterItem>>() {
                     @Override
-                    public void onChanged(List<Note> notes) {
+                    public void onChanged(List<AdapterItem> notes) {
                         adapter.setItems(notes);
-                        adapter.notifyDataSetChanged();
                     }
                 });
 
@@ -145,26 +146,6 @@ public class NotesFragment extends Fragment {
                         } else {
                             progressBar.setVisibility(View.GONE);
                         }
-                    }
-                });
-
-        notesViewModel.getNewNoteAddedLiveData()
-                .observe(getViewLifecycleOwner(), new Observer<Note>() {
-                    @Override
-                    public void onChanged(Note note) {
-//                        adapter.addItem(note);
-//                        adapter.notifyItemInserted(adapter.getItemCount() - 1);
-//
-//                        notesList.smoothScrollToPosition(adapter.getItemCount() - 1);
-                    }
-                });
-
-        notesViewModel.getRemovedItemPositionLiveData()
-                .observe(getViewLifecycleOwner(), new Observer<Integer>() {
-                    @Override
-                    public void onChanged(Integer position) {
-//                        adapter.removeAtPosition(position);
-//                        adapter.notifyItemRemoved(position);
                     }
                 });
 
@@ -188,7 +169,7 @@ public class NotesFragment extends Fragment {
     @Override
     public boolean onContextItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.action_delete) {
-            notesViewModel.deleteAtPosition(contextMenuItemPosition);
+            notesViewModel.deleteAtPosition(adapter.getItemAtIndex(contextMenuItemPosition));
             return true;
         }
         if (item.getItemId() == R.id.action_show_picker) {
@@ -196,11 +177,11 @@ public class NotesFragment extends Fragment {
             MaterialDatePicker picker = MaterialDatePicker.Builder.datePicker().build();
 
             picker.addOnPositiveButtonClickListener(new MaterialPickerOnPositiveButtonClickListener<Long>() {
-                        @Override
-                        public void onPositiveButtonClick(Long selection) {
-                            notesViewModel.dateSelected(selection);
-                        }
-                    });
+                @Override
+                public void onPositiveButtonClick(Long selection) {
+                    notesViewModel.dateSelected(selection);
+                }
+            });
 
             picker.show(getChildFragmentManager(), "MaterialDatePicker");
 

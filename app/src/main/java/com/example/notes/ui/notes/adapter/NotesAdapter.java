@@ -1,4 +1,4 @@
-package com.example.notes.ui.notes;
+package com.example.notes.ui.notes.adapter;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,24 +10,18 @@ import com.bumptech.glide.Glide;
 import com.example.notes.R;
 import com.example.notes.domain.domain.Note;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 public class NotesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    static final int ITEM_NOTE = 0;
-    static final int ITEM_HEADER = 1;
-
-    private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.yyyy", Locale.getDefault());
+    public static final int ITEM_NOTE = 0;
+    public static final int ITEM_HEADER = 1;
 
     private final List<AdapterItem> items = new ArrayList<>();
     private final Fragment fragment;
@@ -38,31 +32,16 @@ public class NotesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         this.fragment = fragment;
     }
 
-    public void setItems(List<Note> toSet) {
+    public void setItems(List<AdapterItem> toSet) {
+
+        DiffUtil.Callback callback = new DiffUtilCallBack(items, toSet);
+
+        DiffUtil.DiffResult result = DiffUtil.calculateDiff(callback);
 
         items.clear();
+        items.addAll(toSet);
 
-        Collections.sort(toSet, new Comparator<Note>() {
-            @Override
-            public int compare(Note o1, Note o2) {
-                return o1.getDate().compareTo(o2.getDate());
-            }
-        });
-
-        Date currentDate = null;
-
-        for (Note note : toSet) {
-
-            Date noteDate = note.getDate();
-
-            if (!noteDate.equals(currentDate)) {
-                currentDate = noteDate;
-                items.add(new HeaderAdapterItem(simpleDateFormat.format(currentDate)));
-            }
-
-            items.add(new NoteAdapterItem(note));
-        }
-
+        result.dispatchUpdatesTo(this);
     }
 
     public void addItem(Note note) {
@@ -152,11 +131,15 @@ public class NotesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         this.noteLongClicked = noteLongClicked;
     }
 
-    interface OnNoteClicked {
+    public Note getItemAtIndex(int contextMenuItemPosition) {
+       return ((NoteAdapterItem)items.get(contextMenuItemPosition)).getNote();
+    }
+
+    public interface OnNoteClicked {
         void onNoteClicked(Note note);
     }
 
-    interface OnNoteLongClicked {
+    public interface OnNoteLongClicked {
         void onNoteLongClicked(View itemView, int position, Note note);
     }
 

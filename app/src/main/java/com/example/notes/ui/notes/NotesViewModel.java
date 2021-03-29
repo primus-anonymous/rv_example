@@ -3,15 +3,22 @@ package com.example.notes.ui.notes;
 import com.example.notes.domain.domain.Callback;
 import com.example.notes.domain.domain.Note;
 import com.example.notes.domain.domain.NotesRepository;
+import com.example.notes.ui.notes.adapter.AdapterItem;
+import com.example.notes.ui.notes.adapter.HeaderAdapterItem;
+import com.example.notes.ui.notes.adapter.NoteAdapterItem;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import androidx.arch.core.util.Function;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Transformations;
 import androidx.lifecycle.ViewModel;
 
 public class NotesViewModel extends ViewModel {
@@ -24,13 +31,9 @@ public class NotesViewModel extends ViewModel {
 
     private final NotesRepository repository;
 
-    private final MutableLiveData<List<Note>> notesLiveData = new MutableLiveData<>();
+    private final MutableLiveData<ArrayList<Note>> notesLiveData = new MutableLiveData<>();
 
     private final MutableLiveData<Boolean> progressLiveData = new MutableLiveData<>();
-
-    private final MutableLiveData<Note> newNoteAddedLiveData = new MutableLiveData<>();
-
-    private final MutableLiveData<Integer> removedItemPositionLiveData = new MutableLiveData<>();
 
     private final MutableLiveData<String> selectedDateLiveData = new MutableLiveData<>();
 
@@ -39,14 +42,43 @@ public class NotesViewModel extends ViewModel {
         repository.getNotes(new Callback<List<Note>>() {
             @Override
             public void onResult(List<Note> value) {
-                notesLiveData.postValue(value);
+                notesLiveData.postValue(new ArrayList<>(value));
                 progressLiveData.setValue(false);
             }
         });
     }
 
-    public LiveData<List<Note>> getNotesLiveData() {
-        return notesLiveData;
+    public LiveData<List<AdapterItem>> getNotesLiveData() {
+        return Transformations.map(notesLiveData, new Function<ArrayList<Note>, List<AdapterItem>>() {
+            @Override
+            public List<AdapterItem> apply(ArrayList<Note> input) {
+
+                ArrayList<AdapterItem> result = new ArrayList<>();
+
+                Collections.sort(input, new Comparator<Note>() {
+                    @Override
+                    public int compare(Note o1, Note o2) {
+                        return o1.getDate().compareTo(o2.getDate());
+                    }
+                });
+
+                Date currentDate = null;
+
+                for (Note note : input) {
+
+                    Date noteDate = note.getDate();
+
+                    if (!noteDate.equals(currentDate)) {
+                        currentDate = noteDate;
+                        result.add(new HeaderAdapterItem(simpleDateFormat.format(currentDate)));
+                    }
+
+                    result.add(new NoteAdapterItem(note));
+                }
+
+                return result;
+            }
+        });
     }
 
     public LiveData<Boolean> getProgressLiveData() {
@@ -59,8 +91,13 @@ public class NotesViewModel extends ViewModel {
         repository.addNewNote(new Callback<Note>() {
             @Override
             public void onResult(Note value) {
-                newNoteAddedLiveData.postValue(value);
                 progressLiveData.setValue(false);
+
+                ArrayList<Note> currentNotes = notesLiveData.getValue();
+
+                currentNotes.add(value);
+
+                notesLiveData.postValue(currentNotes);
             }
         });
     }
@@ -81,15 +118,22 @@ public class NotesViewModel extends ViewModel {
         selectedDateLiveData.setValue(simpleDateFormat.format(new Date(selection)));
     }
 
-    public LiveData<Note> getNewNoteAddedLiveData() {
-        return newNoteAddedLiveData;
-    }
-    public void deleteAtPosition(int contextMenuItemPosition) {
-        removedItemPositionLiveData.setValue(contextMenuItemPosition);
-    }
+    public void deleteAtPosition(Note note) {
+        progressLiveData.setValue(true);
 
-    public LiveData<Integer> getRemovedItemPositionLiveData() {
-        return removedItemPositionLiveData;
+        repository.deleteNote(note, new Callback<Object>() {
+            @Override
+            public void onResult(Object value) {
+                progressLiveData.setValue(false);
+
+                ArrayList<Note> currentNotes = notesLiveData.getValue();
+
+                currentNotes.remove(note);
+
+                notesLiveData.postValue(currentNotes);
+
+            }
+        });
     }
 
     @Override

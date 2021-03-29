@@ -109,5 +109,10 @@ public class MockNotesRepository implements NotesRepository {
 
     }
 
+    @Override
+    public void deleteNote(Note note, Callback<Object> objectCallback) {
+        objectCallback.onResult(new Object());
+    }
+
 
 }
