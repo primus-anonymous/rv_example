@@ -18,12 +18,10 @@ import androidx.annotation.NonNull;
 public class FirestoreNotesRepository implements NotesRepository {
 
     public static final NotesRepository INSTANCE = new FirestoreNotesRepository();
-
-    private static final String NOTES_COLLECTION = "notes";
     public static final String FIELD_NAME = "name";
     public static final String FIELD_IMAGE_URL = "imageUrl";
     public static final String FIELD_DATE = "date";
-
+    private static final String NOTES_COLLECTION = "notes";
     private final FirebaseFirestore fireStore = FirebaseFirestore.getInstance();
 
     @Override
@@ -97,6 +95,24 @@ public class FirestoreNotesRepository implements NotesRepository {
         fireStore.collection(NOTES_COLLECTION)
                 .document(note.getId())
                 .delete()
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        objectCallback.onResult(new Object());
+                    }
+                });
+    }
+
+    @Override
+    public void updateNote(Note note, Callback<Object> objectCallback) {
+
+        HashMap<String, Object> data = new HashMap<>();
+        data.put(FIELD_NAME, note.getName());
+        data.put(FIELD_IMAGE_URL, note.getImageUrl());
+        data.put(FIELD_DATE, note.getDate());
+
+        fireStore.collection(NOTES_COLLECTION)
+                .document(note.getId()).update(data)
                 .addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {

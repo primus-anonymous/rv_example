@@ -114,5 +114,10 @@ public class MockNotesRepository implements NotesRepository {
         objectCallback.onResult(new Object());
     }
 
+    @Override
+    public void updateNote(Note note, Callback<Object> objectCallback) {
+
+    }
+
 
 }

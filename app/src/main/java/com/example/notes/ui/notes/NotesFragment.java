@@ -1,5 +1,6 @@
 package com.example.notes.ui.notes;
 
+import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.ContextMenu;
@@ -9,7 +10,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 
 import com.example.notes.R;
 import com.example.notes.domain.domain.Note;
@@ -29,6 +29,7 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 public class NotesFragment extends Fragment {
 
@@ -40,6 +41,23 @@ public class NotesFragment extends Fragment {
     private NotesAdapter adapter;
     private int contextMenuItemPosition;
 
+    private OnNoteSelected listener;
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+
+        if (context instanceof OnNoteSelected) {
+            listener = (OnNoteSelected) context;
+        }
+    }
+
+    @Override
+    public void onDetach() {
+        listener = null;
+        super.onDetach();
+    }
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,13 +65,13 @@ public class NotesFragment extends Fragment {
         notesViewModel =
                 new ViewModelProvider(this, new NotesViewModelFactory()).get(NotesViewModel.class);
 
-        notesViewModel.fetchNotes();
-
         adapter = new NotesAdapter(this);
         adapter.setNoteClicked(new NotesAdapter.OnNoteClicked() {
             @Override
             public void onNoteClicked(Note note) {
-                Toast.makeText(requireContext(), note.getName(), Toast.LENGTH_SHORT).show();
+                if (listener != null) {
+                    listener.onNoteSelected(note);
+                }
             }
         });
 
@@ -103,6 +121,17 @@ public class NotesFragment extends Fragment {
         });
 
         notesList.setLayoutManager(gridLayoutManager);
+
+        SwipeRefreshLayout swipeRefreshLayout = view.findViewById(R.id.swipe_to_refresh);
+
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                notesViewModel.fetchNotes();
+
+                swipeRefreshLayout.setRefreshing(false);
+            }
+        });
 
         ProgressBar progressBar = view.findViewById(R.id.progress);
 
@@ -159,6 +188,13 @@ public class NotesFragment extends Fragment {
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+
+        notesViewModel.fetchNotes();
+    }
+
+    @Override
     public void onCreateContextMenu(@NonNull ContextMenu menu, @NonNull View v, @Nullable ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
 
@@ -189,5 +225,9 @@ public class NotesFragment extends Fragment {
         }
 
         return super.onContextItemSelected(item);
+    }
+
+    public interface OnNoteSelected {
+        void onNoteSelected(Note note);
     }
 }

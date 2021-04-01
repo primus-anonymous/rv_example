@@ -8,4 +8,6 @@
     <string name="action_clear">Clear</string>
     <string name="action_delete">Delete</string>
     <string name="action_show_picker">Show picker</string>
+    <string name="edi_note">Edit Note</string>
+    <string name="btn_save">Save</string>
 </resources>
