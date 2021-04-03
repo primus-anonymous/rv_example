@@ -1,4 +1,4 @@
-package com.example.notes.domain.domain;
+package com.example.notes.domain;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -17,7 +17,6 @@ import androidx.annotation.NonNull;
 
 public class FirestoreNotesRepository implements NotesRepository {
 
-    public static final NotesRepository INSTANCE = new FirestoreNotesRepository();
     public static final String FIELD_NAME = "name";
     public static final String FIELD_IMAGE_URL = "imageUrl";
     public static final String FIELD_DATE = "date";

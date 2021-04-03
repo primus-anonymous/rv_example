@@ -1,8 +1,8 @@
 package com.example.notes.ui.notes;
 
-import com.example.notes.domain.domain.Callback;
-import com.example.notes.domain.domain.Note;
-import com.example.notes.domain.domain.NotesRepository;
+import com.example.notes.domain.Callback;
+import com.example.notes.domain.Note;
+import com.example.notes.domain.NotesRepository;
 import com.example.notes.ui.notes.adapter.AdapterItem;
 import com.example.notes.ui.notes.adapter.HeaderAdapterItem;
 import com.example.notes.ui.notes.adapter.NoteAdapterItem;

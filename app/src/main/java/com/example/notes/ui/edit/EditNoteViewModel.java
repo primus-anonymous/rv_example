@@ -2,9 +2,9 @@ package com.example.notes.ui.edit;
 
 import android.text.Editable;
 
-import com.example.notes.domain.domain.Callback;
-import com.example.notes.domain.domain.Note;
-import com.example.notes.domain.domain.NotesRepository;
+import com.example.notes.domain.Callback;
+import com.example.notes.domain.Note;
+import com.example.notes.domain.NotesRepository;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;

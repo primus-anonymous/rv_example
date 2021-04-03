@@ -12,7 +12,11 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 
 import com.example.notes.R;
-import com.example.notes.domain.domain.Note;
+import com.example.notes.domain.Note;
+import com.example.notes.ui.main.MainActivity;
+import com.example.notes.ui.router.Router;
+
+import javax.inject.Inject;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -26,6 +30,12 @@ public class EditNoteFragment extends Fragment {
     public static final String TAG = "EditNoteFragment";
 
     private static final String ARG_NOTE = "ARG_NOTE";
+    @Inject
+    Router router;
+    @Inject
+    EditNoteViewModelFactory factory;
+    private EditNoteViewModel viewModel;
+    private Note note;
 
     public static EditNoteFragment newInstance(Note note) {
         EditNoteFragment fragment = new EditNoteFragment();
@@ -37,23 +47,12 @@ public class EditNoteFragment extends Fragment {
         return fragment;
     }
 
-    private EditNoteViewModel viewModel;
-    private Note note;
-
-    private OnNoteSaved listener;
-
     @Override
     public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-        if (context instanceof OnNoteSaved) {
-            listener = (OnNoteSaved) context;
-        }
-    }
+        //все зависимости отмеченные @Inject в этом классе будут предоставлены после этого вызова
+        ((MainActivity) context).getActivitySubcomponent().inject(this);
 
-    @Override
-    public void onDetach() {
-        listener = null;
-        super.onDetach();
+        super.onAttach(context);
     }
 
     @Override
@@ -62,7 +61,7 @@ public class EditNoteFragment extends Fragment {
 
         note = getArguments().getParcelable(ARG_NOTE);
 
-        viewModel = new ViewModelProvider(this, new EditNoteViewModelFactory()).get(EditNoteViewModel.class);
+        viewModel = new ViewModelProvider(this, factory).get(EditNoteViewModel.class);
     }
 
     @Nullable
@@ -139,14 +138,8 @@ public class EditNoteFragment extends Fragment {
             @Override
             public void onChanged(Object o) {
 
-                if (listener != null) {
-                    listener.onNoteSaved();
-                }
+                router.closeEditNotes();
             }
         });
-    }
-
-    public interface OnNoteSaved {
-        void onNoteSaved();
     }
 }

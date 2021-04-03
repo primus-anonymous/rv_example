@@ -1,4 +1,4 @@
-package com.example.notes.domain.domain;
+package com.example.notes.domain;
 
 import android.os.Handler;
 import android.os.Looper;
@@ -11,8 +11,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 public class MockNotesRepository implements NotesRepository {
-
-    public static final NotesRepository INSTANCE = new MockNotesRepository();
 
     private final Executor executor = Executors.newCachedThreadPool();
 

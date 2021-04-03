@@ -11,15 +11,20 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 
+import com.example.notes.App;
 import com.example.notes.R;
-import com.example.notes.domain.domain.Note;
+import com.example.notes.domain.Note;
+import com.example.notes.ui.main.MainActivity;
 import com.example.notes.ui.notes.adapter.AdapterItem;
 import com.example.notes.ui.notes.adapter.NotesAdapter;
+import com.example.notes.ui.router.Router;
 import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.android.material.datepicker.MaterialPickerOnPositiveButtonClickListener;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.util.List;
+
+import javax.inject.Inject;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -36,26 +41,21 @@ public class NotesFragment extends Fragment {
     public static final String TAG = "NotesFragment";
     public static final int SPAN_COUNT = 2;
     private static final int MY_DEFAULT_DURATION = 10000;
+    @Inject
+    Router router; //этот мы получим с активити сабкомпонента
+    @Inject //помеченные @Inject не могут быть private
+            NotesViewModelFactory factory;
     private NotesViewModel notesViewModel;
-
     private NotesAdapter adapter;
     private int contextMenuItemPosition;
 
-    private OnNoteSelected listener;
-
     @Override
     public void onAttach(@NonNull Context context) {
+
+        //все зависимости отмеченные @Inject в этом классе будут предоставлены после этого вызова
+        ((MainActivity) context).getActivitySubcomponent().inject(this);
+
         super.onAttach(context);
-
-        if (context instanceof OnNoteSelected) {
-            listener = (OnNoteSelected) context;
-        }
-    }
-
-    @Override
-    public void onDetach() {
-        listener = null;
-        super.onDetach();
     }
 
     @Override
@@ -63,15 +63,13 @@ public class NotesFragment extends Fragment {
         super.onCreate(savedInstanceState);
 
         notesViewModel =
-                new ViewModelProvider(this, new NotesViewModelFactory()).get(NotesViewModel.class);
+                new ViewModelProvider(this, factory).get(NotesViewModel.class);
 
         adapter = new NotesAdapter(this);
         adapter.setNoteClicked(new NotesAdapter.OnNoteClicked() {
             @Override
             public void onNoteClicked(Note note) {
-                if (listener != null) {
-                    listener.onNoteSelected(note);
-                }
+                router.openEditNotes(note);
             }
         });
 
@@ -225,9 +223,5 @@ public class NotesFragment extends Fragment {
         }
 
         return super.onContextItemSelected(item);
-    }
-
-    public interface OnNoteSelected {
-        void onNoteSelected(Note note);
     }
 }
