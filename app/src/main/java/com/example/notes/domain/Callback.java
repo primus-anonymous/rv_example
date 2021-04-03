@@ -1,4 +1,4 @@
-package com.example.notes.domain.domain;
+package com.example.notes.domain;
 
 public interface Callback<T> {
 

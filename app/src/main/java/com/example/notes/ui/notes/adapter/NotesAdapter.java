@@ -8,7 +8,7 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.example.notes.R;
-import com.example.notes.domain.domain.Note;
+import com.example.notes.domain.Note;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,6 +1,6 @@
 package com.example.notes.ui.notes.adapter;
 
-import com.example.notes.domain.domain.Note;
+import com.example.notes.domain.Note;
 
 import java.util.Objects;
 
